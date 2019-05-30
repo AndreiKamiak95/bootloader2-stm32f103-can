@@ -46,18 +46,18 @@ void main()
     InitCan1();
     
     //Шлем сообщение о запуске загрузчика БВВ STM32
-    TxMessage.StdId = 0x700;
+    TxMessage.ExtId = 0x18FF0110;
     TxMessage.RTR = CAN_RTR_DATA;
-    TxMessage.IDE = CAN_ID_STD;
+    TxMessage.IDE = CAN_ID_EXT;
     TxMessage.DLC = 8;
-    TxMessage.Data[0] = 0x00;
+    TxMessage.Data[0] = 0x01;
     TxMessage.Data[1] = 0x00;
-    TxMessage.Data[2] = 0x01;
-    TxMessage.Data[3] = 0x00;
-    TxMessage.Data[4] = 0x10;
-    TxMessage.Data[5] = 0xFF;
-    TxMessage.Data[6] = 0xFF;
-    TxMessage.Data[7] = 0xFF;
+    TxMessage.Data[2] = 0x00;
+    TxMessage.Data[3] = 0x01;
+    TxMessage.Data[4] = '3';
+    TxMessage.Data[5] = '2';
+    TxMessage.Data[6] = 'F';
+    TxMessage.Data[7] = '4';
     sendMes();
 
     timeout = BIG_TIMEOUT;
@@ -76,9 +76,9 @@ void main()
         //Прием нового ПО
         while(!fEndData) {
             fNewData = 0;
-            TxMessage.StdId = 0x300;
+            TxMessage.ExtId = 0x18FF0210;
             TxMessage.RTR = CAN_RTR_DATA;
-            TxMessage.IDE = CAN_ID_STD;
+            TxMessage.IDE = CAN_ID_EXT;
             TxMessage.DLC = 8;
             *(uint32_t *)(&TxMessage.Data[0]) = cDataMess;
             TxMessage.Data[4] = 0xFF;
@@ -227,16 +227,16 @@ void CAN1_RX0_IRQHandler(void)
 
     CAN_Receive(CAN1, CAN_FIFO0, &RxMessage);
 
-    if(RxMessage.IDE == CAN_ID_STD) 
-    {
-        RxId = RxMessage.StdId >> 8;
+    if(RxMessage.IDE == CAN_ID_EXT) {
+        RxId = RxMessage.ExtId >> 8;
         switch(RxId) {
-            case 0x6:
+            case 0x0CEA10:
                 data0 = RxMessage.Data[0];
                 switch(data0) {
                     case 1:
                         fNewPO = 1;
-                        sizeFile = *(uint32_t *)(&RxMessage.Data[4]);
+                        //sizeFile = *(uint32_t *)(&RxMessage.Data[4]);
+                        sizeFile = 0x18000/8;
                     break;
                     case 2:
                     case 3:
@@ -246,7 +246,7 @@ void CAN1_RX0_IRQHandler(void)
                     break;
                 }
             break;
-            case 0x2: // перестановка байт для защиты от всего
+            case 0x0CE810: // перестановка байт для защиты от всего
                 dataBuffer[1]=RxMessage.Data[0];
                 dataBuffer[0]=RxMessage.Data[1];
                 dataBuffer[3]=RxMessage.Data[2];
